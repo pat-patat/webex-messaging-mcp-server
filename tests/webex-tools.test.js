@@ -1,6 +1,7 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
 import { discoverTools } from '../lib/tools.js';
+import { initializeAuth } from '../lib/webex-config.js';
 
 // Mock fetch for testing
 const originalFetch = global.fetch;
@@ -13,14 +14,17 @@ describe('Webex Tools Integration', () => {
   beforeEach(async () => {
     // Save original environment
     originalEnv = { ...process.env };
-    
+
     // Set test environment variables
     process.env.WEBEX_PUBLIC_WORKSPACE_API_KEY = 'test-token-123';
     process.env.WEBEX_API_BASE_URL = 'https://webexapis.com/v1';
-    
+
+    // Initialize auth before loading tools
+    await initializeAuth();
+
     // Load tools
     tools = await discoverTools();
-    
+
     // Setup mock fetch
     mockFetch = (url, options) => {
       return Promise.resolve({
@@ -34,7 +38,7 @@ describe('Webex Tools Integration', () => {
         text: () => Promise.resolve('{"id":"test-id","message":"success"}')
       });
     };
-    
+
     global.fetch = mockFetch;
   });
 

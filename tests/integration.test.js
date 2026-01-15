@@ -1,6 +1,7 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
 import { discoverTools } from '../lib/tools.js';
+import { initializeAuth } from '../lib/webex-config.js';
 
 describe('Integration Tests', () => {
   let originalEnv;
@@ -9,11 +10,14 @@ describe('Integration Tests', () => {
   beforeEach(async () => {
     // Save original environment
     originalEnv = { ...process.env };
-    
+
     // Set test environment variables
     process.env.WEBEX_PUBLIC_WORKSPACE_API_KEY = 'test-token-123';
     process.env.WEBEX_API_BASE_URL = 'https://webexapis.com/v1';
-    
+
+    // Initialize auth before loading tools
+    await initializeAuth();
+
     // Load tools
     tools = await discoverTools();
   });
@@ -135,12 +139,13 @@ describe('Integration Tests', () => {
     });
 
     it('should handle token formatting correctly', async () => {
-      // Test with Bearer prefix
+      // Test with Bearer prefix - need to re-initialize auth after changing token
       process.env.WEBEX_PUBLIC_WORKSPACE_API_KEY = 'Bearer test-token-with-prefix';
-      
+      await initializeAuth();
+
       const originalFetch = global.fetch;
       let capturedHeaders;
-      
+
       global.fetch = async (url, options) => {
         capturedHeaders = options.headers;
         return {
@@ -153,7 +158,7 @@ describe('Integration Tests', () => {
       try {
         const tool = tools.find(t => t.definition.function.name === 'get_my_own_details');
         await tool.function({});
-        
+
         assert.strictEqual(
           capturedHeaders.Authorization,
           'Bearer test-token-with-prefix',

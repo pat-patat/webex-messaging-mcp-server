@@ -21,8 +21,8 @@ describe('Tools Discovery Module', () => {
   describe('discoverTools', () => {
     it('should discover all available tools', async () => {
       const tools = await discoverTools();
-      
-      // Should have all 52 tools
+
+      // Should have all 52 Webex tools
       assert.strictEqual(tools.length, 52);
       
       // Each tool should have the required structure

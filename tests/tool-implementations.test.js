@@ -3,6 +3,7 @@ import assert from 'node:assert';
 
 // Import specific tool implementations for detailed testing
 import { discoverTools } from '../lib/tools.js';
+import { initializeAuth } from '../lib/webex-config.js';
 
 describe('Tool Implementation Details', () => {
   let originalEnv;
@@ -14,11 +15,14 @@ describe('Tool Implementation Details', () => {
     // Save original environment and fetch
     originalEnv = { ...process.env };
     originalFetch = global.fetch;
-    
+
     // Set test environment variables
     process.env.WEBEX_PUBLIC_WORKSPACE_API_KEY = 'test-token-123';
     process.env.WEBEX_API_BASE_URL = 'https://webexapis.com/v1';
-    
+
+    // Initialize auth before loading tools
+    await initializeAuth();
+
     // Load tools
     tools = await discoverTools();
     

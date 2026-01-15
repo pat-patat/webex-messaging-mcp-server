@@ -8,6 +8,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { discoverTools } from "./lib/tools.js";
+import { initializeAuth, getFullAuthStatus, reauthenticate, logout } from "./lib/webex-config.js";
 import { randomUUID } from "crypto";
 import { z } from "zod";
 
@@ -64,6 +65,92 @@ function convertJsonSchemaToZod(properties, required = []) {
 }
 
 /**
+ * Register authentication prompts for /mcp menu integration
+ * These appear as menu options when user selects the server in /mcp
+ */
+async function registerAuthPrompts(server) {
+  // Check current auth status to determine which prompts to show
+  const authStatus = await getFullAuthStatus();
+
+  // Authenticate prompt - for initial login or switching accounts
+  server.registerPrompt(
+    'authenticate',
+    {
+      title: 'Login to Webex',
+      description: 'Authenticate with Webex using OAuth. Opens a browser window for login.',
+      argsSchema: {}
+    },
+    async () => {
+      console.error('[Auth Prompt] Starting authentication...');
+      const result = await reauthenticate(true);
+      return {
+        messages: [{
+          role: 'user',
+          content: {
+            type: 'text',
+            text: result.success
+              ? `✓ ${result.message}. You can now use Webex tools.`
+              : `✗ ${result.message}`
+          }
+        }]
+      };
+    }
+  );
+
+  // Re-authenticate prompt - force new OAuth flow
+  server.registerPrompt(
+    're-authenticate',
+    {
+      title: 'Re-authenticate',
+      description: 'Force re-authentication with Webex. Use if your session expired or you want to switch accounts.',
+      argsSchema: {}
+    },
+    async () => {
+      console.error('[Auth Prompt] Starting re-authentication...');
+      const result = await reauthenticate(true);
+      return {
+        messages: [{
+          role: 'user',
+          content: {
+            type: 'text',
+            text: result.success
+              ? `✓ ${result.message}. Your Webex session has been refreshed.`
+              : `✗ ${result.message}`
+          }
+        }]
+      };
+    }
+  );
+
+  // Logout prompt - clear stored tokens
+  server.registerPrompt(
+    'logout',
+    {
+      title: 'Clear authentication',
+      description: 'Clear stored Webex OAuth tokens and logout.',
+      argsSchema: {}
+    },
+    async () => {
+      console.error('[Auth Prompt] Logging out...');
+      const result = await logout();
+      return {
+        messages: [{
+          role: 'user',
+          content: {
+            type: 'text',
+            text: result.success
+              ? `✓ ${result.message}`
+              : `✗ ${result.message}`
+          }
+        }]
+      };
+    }
+  );
+
+  console.error('[MCP Server] Registered authentication prompts');
+}
+
+/**
  * Create and configure MCP server with tools
  * Following MCP 2025-06-18 protocol patterns
  */
@@ -74,10 +161,14 @@ async function createMcpServer() {
   }, {
     capabilities: {
       tools: {},
+      prompts: {},
     },
   });
 
   server.onerror = (error) => console.error("[MCP Server Error]", error);
+
+  // Register authentication prompts for /mcp menu integration
+  await registerAuthPrompts(server);
 
   // Discover and register all tools
   const tools = await discoverTools();
@@ -141,6 +232,16 @@ async function createMcpServer() {
 }
 
 async function run() {
+  // Try to initialize authentication, but don't fail if not configured
+  // User can authenticate later using the 'authenticate' tool
+  try {
+    await initializeAuth();
+    console.error('[MCP Server] Authentication initialized successfully');
+  } catch (error) {
+    console.error('[MCP Server] Authentication not configured at startup:', error.message);
+    console.error('[MCP Server] Use the "authenticate" tool to login when ready');
+  }
+
   // Transport mode detection following MCP 2025-06-18 patterns
   const args = process.argv.slice(2);
   const modeFromEnv = (process.env.TRANSPORT || process.env.MCP_MODE || process.env.MODE)?.toLowerCase();
