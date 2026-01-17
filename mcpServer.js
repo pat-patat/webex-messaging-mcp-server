@@ -65,8 +65,8 @@ function convertJsonSchemaToZod(properties, required = []) {
 }
 
 /**
- * Register authentication prompts for /mcp menu integration
- * These appear as menu options when user selects the server in /mcp
+ * Register authentication prompts as MCP prompts
+ * These are accessible via /webex:<prompt-name> commands (e.g., /webex:authenticate)
  */
 async function registerAuthPrompts(server) {
   // Check current auth status to determine which prompts to show
@@ -195,7 +195,7 @@ async function createMcpServer() {
 
   server.onerror = (error) => console.error("[MCP Server Error]", error);
 
-  // Register authentication prompts for /mcp menu integration
+  // Register authentication prompts (accessible via /webex:<prompt-name>)
   await registerAuthPrompts(server);
 
   // Discover and register all tools

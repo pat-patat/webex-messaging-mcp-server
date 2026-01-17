@@ -53,14 +53,14 @@ Priority: Static Token > Auto-Refresh > OAuth. OAuth tokens are stored at `~/.we
 
 ### Authentication Management
 
-Authentication options appear in the `/mcp` menu when you select the Webex server:
+Authentication commands are available via the `/webex:` prefix:
 
-- **Login to Webex** - Authenticate with Webex using OAuth (opens browser)
-- **Re-authenticate** - Force new OAuth flow (for expired sessions or switching accounts)
-- **Clear authentication** - Logout and clear stored tokens
-- **Refresh personal token** - (Auto-refresh mode only) Manually trigger browser automation to refresh token
+- `/webex:authenticate` - Authenticate with Webex (OAuth or browser automation depending on config)
+- `/webex:re-authenticate` - Force new authentication (for expired sessions or switching accounts)
+- `/webex:logout` - Clear stored tokens and logout
+- `/webex:refresh-token` - (Auto-refresh mode only, macOS) Manually trigger browser automation to refresh token
 
-The server starts without requiring authentication. Use the Login prompt when ready.
+The server starts without requiring authentication. Use `/webex:authenticate` when ready.
 
 ## Architecture
 
@@ -106,12 +106,12 @@ export { apiTool };
 ### Authentication Flow
 
 1. `mcpServer.js` starts without requiring authentication (lazy auth)
-2. User selects "Login to Webex" from `/mcp` menu when ready
+2. User runs `/webex:authenticate` when ready
 3. `initializeAuth()` checks for static token first, then auto-refresh, then OAuth
 4. **OAuth flow**: Opens browser, stores tokens to `~/.webex-mcp/tokens.json`, auto-refreshes 5 min before expiry
 5. **Auto-refresh flow**: Opens Chrome, navigates to developer.webex.com, extracts token via JavaScript injection, stores in macOS Keychain, auto-refreshes 30 min before expiry
 6. All tools use `getWebexHeaders()` which returns cached token
-7. User can use "Re-authenticate" or "Clear authentication" from `/mcp` menu
+7. User can use `/webex:re-authenticate` or `/webex:logout` as needed
 
 ## Testing
 
@@ -186,7 +186,7 @@ Options:
 - `WEBEX_OAUTH_CLIENT_ID` + `WEBEX_OAUTH_CLIENT_SECRET` - OAuth flow
 - `WEBEX_PUBLIC_WORKSPACE_API_KEY` - Static token (expires every 12h)
 
-Then use `/mcp` → "authenticate" or "Login to Webex".
+Then use `/webex:authenticate` to trigger authentication.
 
 ### What the Skill Provides
 

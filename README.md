@@ -64,7 +64,7 @@ Add to `~/.claude/settings.json`:
   }
 }
 ```
-Then use `/mcp` → "authenticate" to trigger browser-based token extraction.
+Then use `/webex:authenticate` to trigger browser-based token extraction.
 
 **Option 2: OAuth**
 
@@ -81,7 +81,7 @@ Add to `~/.claude/settings.json`:
   }
 }
 ```
-Then use `/mcp` → "Login to Webex" for browser-based OAuth flow.
+Then use `/webex:authenticate` for browser-based OAuth flow.
 
 **Option 3: Static token**
 
