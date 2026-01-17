@@ -165,6 +165,29 @@ This repo includes a Claude Code plugin that bundles:
 /plugin install webex@webex-messaging-mcp-server
 ```
 
+### Plugin Authentication
+
+Configure authentication in `~/.claude/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "webex": {
+      "env": {
+        "WEBEX_AUTO_REFRESH_TOKEN": "true"
+      }
+    }
+  }
+}
+```
+
+Options:
+- `WEBEX_AUTO_REFRESH_TOKEN=true` - macOS browser automation (recommended)
+- `WEBEX_OAUTH_CLIENT_ID` + `WEBEX_OAUTH_CLIENT_SECRET` - OAuth flow
+- `WEBEX_PUBLIC_WORKSPACE_API_KEY` - Static token (expires every 12h)
+
+Then use `/mcp` → "authenticate" or "Login to Webex".
+
 ### What the Skill Provides
 
 The bundled skill teaches Claude how to:

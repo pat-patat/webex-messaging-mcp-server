@@ -46,6 +46,59 @@ The plugin includes:
 webexteams://im?space=078b4340-bb02-11ee-9ae2-81c7c613996c
 ```
 
+### Plugin Authentication
+
+After installing the plugin, configure authentication:
+
+**Option 1: Auto-refresh token (macOS, recommended)**
+
+Add to `~/.claude/settings.json`:
+```json
+{
+  "mcpServers": {
+    "webex": {
+      "env": {
+        "WEBEX_AUTO_REFRESH_TOKEN": "true"
+      }
+    }
+  }
+}
+```
+Then use `/mcp` → "authenticate" to trigger browser-based token extraction.
+
+**Option 2: OAuth**
+
+Add to `~/.claude/settings.json`:
+```json
+{
+  "mcpServers": {
+    "webex": {
+      "env": {
+        "WEBEX_OAUTH_CLIENT_ID": "your-client-id",
+        "WEBEX_OAUTH_CLIENT_SECRET": "your-client-secret"
+      }
+    }
+  }
+}
+```
+Then use `/mcp` → "Login to Webex" for browser-based OAuth flow.
+
+**Option 3: Static token**
+
+Add to `~/.claude/settings.json`:
+```json
+{
+  "mcpServers": {
+    "webex": {
+      "env": {
+        "WEBEX_PUBLIC_WORKSPACE_API_KEY": "your-token-here"
+      }
+    }
+  }
+}
+```
+Note: Static tokens expire every 12 hours.
+
 ## Quick Start
 
 ### Prerequisites
