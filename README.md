@@ -21,6 +21,30 @@ This MCP server enables AI assistants to interact with Webex messaging through 5
 - ✅ **Enterprise Ready**: Supports Cisco enterprise authentication
 - ✅ **Type Safe**: Full TypeScript/JavaScript implementation with proper error handling
 - ✅ **Centralized Configuration**: Easy token and endpoint management
+- ✅ **Claude Code Plugin**: Install as a plugin with bundled skills for resource resolution
+- ✅ **Auto-Refresh Token**: macOS browser automation for personal token renewal (fork feature)
+- ✅ **OAuth Support**: Browser-based OAuth authentication (fork feature)
+
+## Claude Code Plugin Installation
+
+Install this server as a Claude Code plugin (includes MCP tools + resource resolution skills):
+
+```bash
+# Add the marketplace
+/plugin marketplace add msprunck/webex-messaging-mcp-server
+
+# Install the plugin (globally by default)
+/plugin install webex@msprunck-webex-messaging-mcp-server
+```
+
+The plugin includes:
+- **52 Webex API tools** via MCP
+- **Resource resolution skills** - teaches Claude how to parse Webex links, convert IDs, find people/rooms
+
+**Example:** Give Claude a Webex space link and it will know how to resolve it:
+```
+webexteams://im?space=078b4340-bb02-11ee-9ae2-81c7c613996c
+```
 
 ## Quick Start
 

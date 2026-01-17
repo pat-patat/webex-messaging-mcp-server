@@ -132,3 +132,44 @@ beforeEach(async () => {
 2. Follow the tool pattern above using `getWebexUrl()` and `getWebexHeaders()`
 3. Add path to `tools/paths.js`
 4. Run `npm test` to verify
+
+## Claude Code Plugin
+
+This repo includes a Claude Code plugin that bundles:
+- **MCP Server**: 52 Webex API tools
+- **Skills**: Webex resource resolution guidance (link parsing, ID conversion, etc.)
+
+### Plugin Structure
+
+```
+.claude-plugin/
+├── marketplace.json          # Plugin catalog
+└── webex/
+    ├── plugin.json           # Plugin config with MCP server
+    └── skills/
+        └── webex/
+            └── SKILL.md      # Resource resolution guidance
+```
+
+### Installing the Plugin
+
+**From GitHub (recommended):**
+```bash
+/plugin marketplace add msprunck/webex-messaging-mcp-server
+/plugin install webex@msprunck-webex-messaging-mcp-server
+```
+
+**From local path (development):**
+```bash
+/plugin marketplace add /path/to/webex-messaging-mcp-server
+/plugin install webex@webex-messaging-mcp-server
+```
+
+### What the Skill Provides
+
+The bundled skill teaches Claude how to:
+- Parse Webex space links (`webexteams://im?space=<uuid>`)
+- Convert UUIDs to base64-encoded API IDs
+- Find people by name or email
+- Resolve rooms and direct messages
+- Common workflows without trial and error

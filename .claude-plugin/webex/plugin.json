@@ -1,0 +1,17 @@
+{
+  "name": "webex",
+  "version": "1.0.0",
+  "description": "Webex Messaging integration for Claude Code with 52 API tools and resource resolution skills",
+  "author": "Webex (fork with OAuth and auto-refresh token support)",
+  "repository": "https://github.com/msprunck/webex-messaging-mcp-server",
+  "upstream": "https://github.com/webex/webex-messaging-mcp-server",
+  "mcp": {
+    "servers": {
+      "webex": {
+        "command": "node",
+        "args": ["mcpServer.js"],
+        "cwd": "${pluginDir}/../.."
+      }
+    }
+  }
+}

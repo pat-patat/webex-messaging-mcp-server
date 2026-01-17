@@ -1,0 +1,11 @@
+{
+  "name": "webex-messaging-mcp-server",
+  "description": "Webex Messaging MCP Server with tools and skills for Claude Code",
+  "plugins": [
+    {
+      "name": "webex",
+      "description": "Webex Messaging integration with 52 API tools and resource resolution skills",
+      "path": "./webex"
+    }
+  ]
+}
