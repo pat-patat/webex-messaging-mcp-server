@@ -176,6 +176,7 @@ describe('Webex Configuration Module', () => {
       delete process.env.WEBEX_PUBLIC_WORKSPACE_API_KEY;
       delete process.env.WEBEX_OAUTH_CLIENT_ID;
       delete process.env.WEBEX_OAUTH_CLIENT_SECRET;
+      delete process.env.WEBEX_AUTO_REFRESH_TOKEN;
       assert.throws(() => {
         validateWebexConfig();
       }, /Missing authentication configuration/);
@@ -185,6 +186,7 @@ describe('Webex Configuration Module', () => {
       process.env.WEBEX_PUBLIC_WORKSPACE_API_KEY = '';
       delete process.env.WEBEX_OAUTH_CLIENT_ID;
       delete process.env.WEBEX_OAUTH_CLIENT_SECRET;
+      delete process.env.WEBEX_AUTO_REFRESH_TOKEN;
       assert.throws(() => {
         validateWebexConfig();
       }, /Missing authentication configuration/);
@@ -203,6 +205,7 @@ describe('Webex Configuration Module', () => {
       delete process.env.WEBEX_PUBLIC_WORKSPACE_API_KEY;
       delete process.env.WEBEX_OAUTH_CLIENT_ID;
       delete process.env.WEBEX_OAUTH_CLIENT_SECRET;
+      delete process.env.WEBEX_AUTO_REFRESH_TOKEN;
       await assert.rejects(
         async () => { await initializeAuth(); },
         /No authentication configured/

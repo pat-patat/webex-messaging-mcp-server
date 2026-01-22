@@ -8,7 +8,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { discoverTools } from "./lib/tools.js";
-import { initializeAuth, getFullAuthStatus, reauthenticate, logout, refreshAutoToken } from "./lib/webex-config.js";
+import { reauthenticate, logout, completeManualAuth, startManualAuth } from "./lib/webex-config.js";
 import { randomUUID } from "crypto";
 import { z } from "zod";
 
@@ -21,6 +21,20 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 const SERVER_NAME = "webex-messaging-mcp-server";
+
+/**
+ * Create a prompt response with a text message
+ * @param {string} text - The message text
+ * @returns {Object} The prompt response object
+ */
+function promptResponse(text) {
+  return {
+    messages: [{
+      role: 'user',
+      content: { type: 'text', text }
+    }]
+  };
+}
 
 /**
  * Convert JSON Schema properties to Zod schema format
@@ -68,57 +82,100 @@ function convertJsonSchemaToZod(properties, required = []) {
  * Register authentication prompts as MCP prompts
  * These are accessible via /webex:<prompt-name> commands (e.g., /webex:authenticate)
  */
-async function registerAuthPrompts(server) {
-  // Check current auth status to determine which prompts to show
-  const authStatus = await getFullAuthStatus();
-
-  // Authenticate prompt - for initial login or switching accounts
+function registerAuthPrompts(server) {
+  // Authenticate prompt - handles different auth methods
   server.registerPrompt(
     'authenticate',
     {
       title: 'Login to Webex',
-      description: 'Authenticate with Webex using OAuth. Opens a browser window for login.',
+      description: 'Authenticate with Webex. For personal token: opens browser to copy token. For OAuth: starts OAuth flow.',
       argsSchema: {}
     },
     async () => {
-      console.error('[Auth Prompt] Starting authentication...');
-      const result = await reauthenticate(true);
-      return {
-        messages: [{
-          role: 'user',
-          content: {
-            type: 'text',
-            text: result.success
-              ? `✓ ${result.message}. You can now use Webex tools.`
-              : `✗ ${result.message}`
-          }
-        }]
-      };
+      const hasStaticToken = !!process.env.WEBEX_PUBLIC_WORKSPACE_API_KEY;
+      const hasAutoRefresh = process.env.WEBEX_AUTO_REFRESH_TOKEN === 'true';
+      const hasOAuth = !!process.env.WEBEX_OAUTH_CLIENT_ID && !!process.env.WEBEX_OAUTH_CLIENT_SECRET;
+
+      if (hasStaticToken) {
+        return promptResponse('✓ Using static token from WEBEX_PUBLIC_WORKSPACE_API_KEY. No authentication needed.');
+      }
+
+      if (hasAutoRefresh) {
+        console.error('[Auth Prompt] Starting manual authentication for personal token...');
+        const result = await startManualAuth();
+        if (result.success) {
+          return promptResponse(`Browser opened!\n\n${result.instructions}\n\nOnce you've copied the token, run: /webex:confirm-token`);
+        }
+        return promptResponse(`✗ ${result.message}`);
+      }
+
+      if (hasOAuth) {
+        console.error('[Auth Prompt] Starting OAuth authentication...');
+        const result = await reauthenticate(true);
+        return promptResponse(result.success
+          ? `✓ ${result.message}. You can now use Webex tools.`
+          : `✗ ${result.message}`);
+      }
+
+      return promptResponse(
+        '✗ No authentication method configured. Set one of:\n' +
+        '- WEBEX_PUBLIC_WORKSPACE_API_KEY (static token)\n' +
+        '- WEBEX_AUTO_REFRESH_TOKEN=true (personal token, macOS)\n' +
+        '- WEBEX_OAUTH_CLIENT_ID + WEBEX_OAUTH_CLIENT_SECRET (OAuth)'
+      );
     }
   );
 
-  // Re-authenticate prompt - force new OAuth flow
+  // Confirm token prompt - only for personal token flow
+  server.registerPrompt(
+    'confirm-token',
+    {
+      title: 'Confirm token copied',
+      description: 'After copying your Webex personal token, run this to complete authentication.',
+      argsSchema: {}
+    },
+    async () => {
+      const hasAutoRefresh = process.env.WEBEX_AUTO_REFRESH_TOKEN === 'true';
+      if (!hasAutoRefresh) {
+        return promptResponse('✗ This command is only for personal token authentication (WEBEX_AUTO_REFRESH_TOKEN=true).');
+      }
+
+      console.error('[Auth Prompt] Completing manual authentication...');
+      const result = await completeManualAuth();
+      return promptResponse(result.success ? `✓ ${result.message}` : `✗ ${result.message}`);
+    }
+  );
+
+  // Re-authenticate prompt - handles different auth methods
   server.registerPrompt(
     're-authenticate',
     {
       title: 'Re-authenticate',
-      description: 'Force re-authentication with Webex. Use if your session expired or you want to switch accounts.',
+      description: 'Force re-authentication with Webex.',
       argsSchema: {}
     },
     async () => {
-      console.error('[Auth Prompt] Starting re-authentication...');
+      const hasStaticToken = !!process.env.WEBEX_PUBLIC_WORKSPACE_API_KEY;
+      const hasAutoRefresh = process.env.WEBEX_AUTO_REFRESH_TOKEN === 'true';
+
+      if (hasStaticToken) {
+        return promptResponse('✗ Cannot re-authenticate with static token. Update WEBEX_PUBLIC_WORKSPACE_API_KEY instead.');
+      }
+
+      if (hasAutoRefresh) {
+        console.error('[Auth Prompt] Starting re-authentication for personal token...');
+        const result = await startManualAuth();
+        if (result.success) {
+          return promptResponse(`Browser opened!\n\n${result.instructions}\n\nOnce you've copied the token, run: /webex:confirm-token`);
+        }
+        return promptResponse(`✗ ${result.message}`);
+      }
+
+      console.error('[Auth Prompt] Starting OAuth re-authentication...');
       const result = await reauthenticate(true);
-      return {
-        messages: [{
-          role: 'user',
-          content: {
-            type: 'text',
-            text: result.success
-              ? `✓ ${result.message}. Your Webex session has been refreshed.`
-              : `✗ ${result.message}`
-          }
-        }]
-      };
+      return promptResponse(result.success
+        ? `✓ ${result.message}. Your Webex session has been refreshed.`
+        : `✗ ${result.message}`);
     }
   );
 
@@ -133,47 +190,9 @@ async function registerAuthPrompts(server) {
     async () => {
       console.error('[Auth Prompt] Logging out...');
       const result = await logout();
-      return {
-        messages: [{
-          role: 'user',
-          content: {
-            type: 'text',
-            text: result.success
-              ? `✓ ${result.message}`
-              : `✗ ${result.message}`
-          }
-        }]
-      };
+      return promptResponse(result.success ? `✓ ${result.message}` : `✗ ${result.message}`);
     }
   );
-
-  // Refresh token prompt - for auto-refresh mode (macOS only)
-  if (process.platform === 'darwin' && process.env.WEBEX_AUTO_REFRESH_TOKEN === 'true') {
-    server.registerPrompt(
-      'refresh-token',
-      {
-        title: 'Refresh personal token',
-        description: 'Manually refresh personal access token via browser automation (macOS only).',
-        argsSchema: {}
-      },
-      async () => {
-        console.error('[Auth Prompt] Refreshing personal token...');
-        const result = await refreshAutoToken();
-        return {
-          messages: [{
-            role: 'user',
-            content: {
-              type: 'text',
-              text: result.success
-                ? `✓ ${result.message}`
-                : `✗ ${result.message}`
-            }
-          }]
-        };
-      }
-    );
-    console.error('[MCP Server] Registered refresh-token prompt (auto-refresh mode)');
-  }
 
   console.error('[MCP Server] Registered authentication prompts');
 }
@@ -196,7 +215,7 @@ async function createMcpServer() {
   server.onerror = (error) => console.error("[MCP Server Error]", error);
 
   // Register authentication prompts (accessible via /webex:<prompt-name>)
-  await registerAuthPrompts(server);
+  registerAuthPrompts(server);
 
   // Discover and register all tools
   const tools = await discoverTools();
@@ -260,15 +279,8 @@ async function createMcpServer() {
 }
 
 async function run() {
-  // Try to initialize authentication, but don't fail if not configured
-  // User can authenticate later using the 'authenticate' tool
-  try {
-    await initializeAuth();
-    console.error('[MCP Server] Authentication initialized successfully');
-  } catch (error) {
-    console.error('[MCP Server] Authentication not configured at startup:', error.message);
-    console.error('[MCP Server] Use the "authenticate" tool to login when ready');
-  }
+  // Authentication is deferred - user must run /webex:authenticate when ready
+  console.error('[MCP Server] Authentication deferred. Use /webex:authenticate to login when ready.');
 
   // Transport mode detection following MCP 2025-06-18 patterns
   const args = process.argv.slice(2);
