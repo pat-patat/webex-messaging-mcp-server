@@ -30,7 +30,7 @@ describe('Integration Tests', () => {
   describe('End-to-End Tool Discovery and Execution', () => {
     it('should discover and validate all tools', async () => {
       // Verify we have the expected number of tools
-      assert.strictEqual(tools.length, 52, 'Should discover exactly 52 tools');
+      assert.strictEqual(tools.length, 55, 'Should discover exactly 55 tools');
       
       // Verify each tool has the required structure
       tools.forEach((tool, index) => {

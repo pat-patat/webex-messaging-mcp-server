@@ -50,5 +50,8 @@ export const toolPaths = [
   'webex-public-workspace/webex-messaging/update-an-ecm-linked-folder.js',
   'webex-public-workspace/webex-messaging/list-messages.js',
   'webex-public-workspace/webex-messaging/list-people.js',
-  'webex-public-workspace/webex-messaging/create-a-person.js'
+  'webex-public-workspace/webex-messaging/create-a-person.js',
+  'webex-public-workspace/webex-messaging/get-all-unread.js',
+  'webex-public-workspace/webex-messaging/mark-room-checked.js',
+  'webex-public-workspace/webex-messaging/mark-all-rooms-checked.js'
 ];

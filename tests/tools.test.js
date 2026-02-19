@@ -22,8 +22,8 @@ describe('Tools Discovery Module', () => {
     it('should discover all available tools', async () => {
       const tools = await discoverTools();
 
-      // Should have all 52 Webex tools
-      assert.strictEqual(tools.length, 52);
+      // Should have all 55 Webex tools (52 original + 3 unread tracking)
+      assert.strictEqual(tools.length, 55);
       
       // Each tool should have the required structure
       tools.forEach(tool => {
@@ -56,7 +56,10 @@ describe('Tools Discovery Module', () => {
         'get_my_own_details',
         'list_people',
         'create_webhook',
-        'list_webhooks'
+        'list_webhooks',
+        'get_all_unread',
+        'mark_room_checked',
+        'mark_all_rooms_checked'
       ];
 
       expectedTools.forEach(expectedTool => {

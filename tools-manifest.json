@@ -4,7 +4,7 @@
   "description": "A comprehensive MCP server providing AI assistants with full access to Cisco Webex messaging capabilities",
   "protocol": "MCP 2025-06-18",
   "sdk_version": "1.17.4+",
-  "total_tools": 52,
+  "total_tools": 55,
   "categories": {
     "messages": {
       "description": "Message creation, editing, deletion, and retrieval operations",
@@ -99,13 +99,22 @@
         "unlink_ecm_linked_folder"
       ],
       "count": 12
+    },
+    "unread_tracking": {
+      "description": "Unread message tracking and room check-in operations",
+      "tools": [
+        "get_all_unread",
+        "mark_room_checked",
+        "mark_all_rooms_checked"
+      ],
+      "count": 3
     }
   },
   "workspace_structure": {
     "webex-public-workspace": {
       "webex-messaging": {
         "description": "Cisco Webex messaging API tools",
-        "tool_count": 52,
+        "tool_count": 55,
         "api_base": "https://webexapis.com/v1"
       }
     }
